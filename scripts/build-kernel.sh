@@ -9,21 +9,43 @@ DEFCONFIG="${5:-defconfig}"
 ARCH="${6:-arm64}"
 CROSS_COMPILE="${7:-aarch64-linux-gnu-}"
 USE_CUSTOM_CONFIG="${8:-true}"
+DEVICE_TREE_REPO="${9:-}"
+DEVICE_TREE_REF="${10:-master}"
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CUSTOM_CONFIG="$ROOT_DIR/kernel-config/redmi-turbo4-pro.config"
 
-mkdir -p "$WORKDIR"
+clone_or_update_repo() {
+  local repo="$1"
+  local ref="$2"
+  local target="$3"
 
-if [ ! -d "$WORKDIR/.git" ]; then
-  git clone --depth 1 --branch "$KERNEL_REF" "$KERNEL_REPO" "$WORKDIR"
-else
-  git -C "$WORKDIR" fetch --depth 1 origin "$KERNEL_REF" >/dev/null 2>&1 || true
-  git -C "$WORKDIR" checkout -f FETCH_HEAD >/dev/null 2>&1 || true
-fi
+  if [ -z "$repo" ]; then
+    return 0
+  fi
+
+  if [ ! -d "$target/.git" ]; then
+    git clone --depth 1 --branch "$ref" "$repo" "$target"
+  else
+    git -C "$target" fetch --depth 1 origin "$ref" >/dev/null 2>&1 || true
+    git -C "$target" checkout -f FETCH_HEAD >/dev/null 2>&1 || true
+  fi
+}
+
+mkdir -p "$WORKDIR"
+clone_or_update_repo "$KERNEL_REPO" "$KERNEL_REF" "$WORKDIR"
 
 cd "$WORKDIR"
 mkdir -p "$OUT_DIR"
+
+if [ -n "$DEVICE_TREE_REPO" ]; then
+  DEVICE_TREE_DIR="$WORKDIR/device-tree"
+  clone_or_update_repo "$DEVICE_TREE_REPO" "$DEVICE_TREE_REF" "$DEVICE_TREE_DIR"
+  if [ -d "$DEVICE_TREE_DIR/arch/arm64/boot/dts" ]; then
+    mkdir -p "$WORKDIR/arch/arm64/boot/dts/vendor"
+    cp -a "$DEVICE_TREE_DIR/arch/arm64/boot/dts/." "$WORKDIR/arch/arm64/boot/dts/vendor/" 2>/dev/null || true
+  fi
+fi
 
 export ARCH
 export CROSS_COMPILE

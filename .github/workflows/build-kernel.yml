@@ -11,6 +11,14 @@ on:
         description: Branch, tag or commit to build
         required: true
         default: master
+      device_tree_repo:
+        description: Device tree repository URL (leave blank to skip)
+        required: false
+        default: ""
+      device_tree_ref:
+        description: Device tree branch, tag or commit
+        required: false
+        default: master
       defconfig:
         description: Defconfig target
         required: true
@@ -46,7 +54,7 @@ jobs:
           sudo apt-get install -y \
             bc bison flex build-essential libssl-dev libelf-dev dwarves \
             clang lld llvm curl git ca-certificates zip unzip \
-            gcc-aarch64-linux-gnu
+            gcc-aarch64-linux-gnu libncurses-dev pkg-config python3-dev
 
       - name: Build kernel
         shell: bash
@@ -60,13 +68,15 @@ jobs:
             "${{ inputs.defconfig }}" \
             "${{ inputs.arch }}" \
             "${{ inputs.cross_compile }}" \
-            "${{ inputs.use_custom_config }}"
+            "${{ inputs.use_custom_config }}" \
+            "${{ inputs.device_tree_repo }}" \
+            "${{ inputs.device_tree_ref }}"
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: redmi-turbo4-pro-kernel
           path: |
-            ${{ runner.temp }}/kernel-out/arch/arm64/boot/Image.gz
+            ${{ runner.temp }}/kernel-out/arch/arm64/boot/Image*
             ${{ runner.temp }}/kernel-out/.config
           if-no-files-found: warn
