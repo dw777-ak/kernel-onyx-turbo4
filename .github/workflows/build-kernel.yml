@@ -1,0 +1,72 @@
+name: Build Balanced Redmi Turbo 4 Pro Kernel
+
+on:
+  workflow_dispatch:
+    inputs:
+      kernel_source_repo:
+        description: Kernel source repository URL
+        required: true
+        default: https://github.com/torvalds/linux.git
+      kernel_source_ref:
+        description: Branch, tag or commit to build
+        required: true
+        default: master
+      defconfig:
+        description: Defconfig target
+        required: true
+        default: defconfig
+      arch:
+        description: Target architecture
+        required: true
+        default: arm64
+      cross_compile:
+        description: Cross compiler prefix
+        required: true
+        default: aarch64-linux-gnu-
+      use_custom_config:
+        description: Use the balanced Redmi Turbo 4 Pro config profile
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    env:
+      TZ: Asia/Shanghai
+      KBUILD_BUILD_USER: github-actions
+      KBUILD_BUILD_HOST: github-actions
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            bc bison flex build-essential libssl-dev libelf-dev dwarves \
+            clang lld llvm curl git ca-certificates zip unzip \
+            gcc-aarch64-linux-gnu
+
+      - name: Build kernel
+        shell: bash
+        run: |
+          chmod +x scripts/build-kernel.sh
+          ./scripts/build-kernel.sh \
+            "${{ inputs.kernel_source_repo }}" \
+            "${{ inputs.kernel_source_ref }}" \
+            "$RUNNER_TEMP/kernel-src" \
+            "$RUNNER_TEMP/kernel-out" \
+            "${{ inputs.defconfig }}" \
+            "${{ inputs.arch }}" \
+            "${{ inputs.cross_compile }}" \
+            "${{ inputs.use_custom_config }}"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: redmi-turbo4-pro-kernel
+          path: |
+            ${{ runner.temp }}/kernel-out/arch/arm64/boot/Image.gz
+            ${{ runner.temp }}/kernel-out/.config
+          if-no-files-found: warn
