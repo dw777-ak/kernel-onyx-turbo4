@@ -6,23 +6,23 @@ on:
       kernel_source_repo:
         description: Kernel source repository URL
         required: true
-        default: https://github.com/torvalds/linux.git
+        default: https://github.com/MiCode/Xiaomi_Kernel_OpenSource.git
       kernel_source_ref:
         description: Branch, tag or commit to build
         required: true
-        default: master
+        default: onyx-v-oss
       device_tree_repo:
-        description: Device tree repository URL (leave blank to skip)
+        description: Device tree repository URL (fill with your DTS/device-tree repo if available)
         required: false
-        default: ""
+        default: https://github.com/your-org/android_device_xiaomi_onyx.git
       device_tree_ref:
         description: Device tree branch, tag or commit
         required: false
         default: master
       defconfig:
-        description: Defconfig target
+        description: Defconfig target (onyx-oriented build typically uses vendor/onyx_defconfig)
         required: true
-        default: defconfig
+        default: vendor/onyx_defconfig
       arch:
         description: Target architecture
         required: true
